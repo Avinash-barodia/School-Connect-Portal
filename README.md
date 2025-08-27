@@ -1,7 +1,7 @@
 <<<<<<< HEAD
 # School-Connect-Portal
 =======
-# Lama Dev School Management Dashboard
+#School Management Dashboard
 
 ## Getting Started
 
