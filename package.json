@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "socket": "ts-node src/lib/socket-server.ts"
+    "socket": "ts-node src/lib/socket-server.ts",
+    "build-socket": "tsc src/lib/socket-server.ts --outDir dist --esModuleInterop --skipLibCheck"
   },
   "dependencies": {
     "@clerk/elements": "^0.14.6",
