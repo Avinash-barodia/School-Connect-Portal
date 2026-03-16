@@ -1,4 +1,4 @@
-// File: /Users/avinashbarodia/Projects/full-stack-school-main/src/app/[[...sign-in]]/page.tsx
+// File: C:\Users\hp\School-Connect-Portal\School-Connect-Portal\src\app\[[...sign-in]]\page.tsx
 import * as entry from '../../../../src/app/[[...sign-in]]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

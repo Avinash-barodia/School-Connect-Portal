@@ -2,18 +2,40 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  ClassSchema,
-  EventSchema,
-  ExamSchema,
-  ParentSchema,
-  StudentSchema,
   SubjectSchema,
   TeacherSchema,
+  AssignmentSchema,
+  AttendanceSchema,
+  LessonSchema,
+  ClassSchema,
+  ExamSchema,
+  EventSchema,
+  ParentSchema,
+  StudentSchema,
 } from "./formValidationSchemas";
 import prisma from "./prisma";
-import { clerkClient } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 
-type CurrentState = { success: boolean; error: boolean };
+type CurrentState = { success: boolean; error: boolean } | undefined;
+
+const triggerNotification = async (userId: string, title: string, message: string) => {
+  try {
+    // Persist notification
+    await prisma.notification.create({
+      data: { userId, title, message },
+    });
+    
+    // Trigger real-time event via HTTP endpoint on socket server
+    const socketInternalUrl = process.env.SOCKET_SERVER_INTERNAL_URL || "http://localhost:3002";
+    await fetch(`${socketInternalUrl}/notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, title, message }),
+    });
+  } catch (err) {
+    console.error("Failed to trigger notification:", err);
+  }
+};
 
 export const createSubject = async (
   currentState: CurrentState,
@@ -603,6 +625,230 @@ export const deleteEvent = async (
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
+  }
+};
+
+export const createAssignment = async (
+  currentState: CurrentState,
+  data: AssignmentSchema
+) => {
+  const { userId } = auth();
+  try {
+    const assignment = await prisma.assignment.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        startDate: data.startDate,
+        dueDate: data.dueDate,
+        lessonId: data.lessonId ? parseInt(data.lessonId as any) : null,
+        subjectId: data.subjectId,
+        classId: data.classId,
+        teacherId: userId!,
+      },
+      include: {
+        class: {
+          select: {
+            students: { select: { id: true } },
+          },
+        },
+        subject: { select: { name: true } },
+      },
+    });
+
+    // Notify all students in the class
+    const students = assignment.class?.students || [];
+    for (const student of students) {
+      await triggerNotification(
+        student.id,
+        "New Assignment",
+        `New assignment for ${assignment.subject?.name}: ${data.title}`
+      );
+    }
+
+    revalidatePath("/list/assignments");
+    return { success: true, error: false };
+  } catch (err) {
+    console.log(err);
     return { success: false, error: true };
+  }
+};
+
+export const createAttendance = async (
+  currentState: CurrentState,
+  data: AttendanceSchema
+) => {
+  try {
+    await prisma.attendance.create({
+      data: {
+        date: data.date,
+        present: data.present,
+        studentId: data.studentId,
+        lessonId: data.lessonId,
+      },
+    });
+
+    // Check attendance percentage for the student in this lesson
+    const attendances = await prisma.attendance.findMany({
+      where: {
+        studentId: data.studentId,
+        lessonId: data.lessonId,
+      },
+    });
+
+    const total = attendances.length;
+    const present = attendances.filter((a) => a.present).length;
+    const percentage = (present / total) * 100;
+
+    if (percentage < 75) {
+      const student = await prisma.student.findUnique({
+        where: { id: data.studentId },
+        select: { parentId: true, name: true },
+      });
+
+      if (student) {
+        const message = `Attendance for ${student.name} is low (${percentage.toFixed(1)}%) in this lesson.`;
+        // Notify Student
+        await triggerNotification(data.studentId, "Low Attendance Alert", message);
+        // Notify Parent
+        await triggerNotification(student.parentId, "Low Attendance Alert", message);
+      }
+    }
+
+    return { success: true, error: false };
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const createLesson = async (
+  currentState: CurrentState,
+  data: LessonSchema
+) => {
+  try {
+    await prisma.lesson.create({
+      data: {
+        name: data.name,
+        day: data.day,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        subjectId: data.subjectId,
+        classId: data.classId,
+        teacherId: data.teacherId,
+      },
+    });
+
+    // revalidatePath("/list/lessons");
+    return { success: true, error: false };
+  } catch (err) {
+    console.log(err);
+    return { success: false, error: true };
+  }
+};
+
+export const deleteLesson = async (
+  currentState: CurrentState,
+  data: FormData
+) => {
+  const id = data.get("id") as string;
+  try {
+    await prisma.lesson.delete({
+      where: {
+        id: parseInt(id),
+      },
+    });
+
+    // revalidatePath("/list/lessons");
+    return { success: true, error: false };
+  } catch (err) {
+    console.log(err);
+    return { success: false, error: true };
+  }
+};
+
+export const deleteAssignment = async (
+  currentState: CurrentState,
+  data: FormData
+) => {
+  const id = data.get("id") as string;
+  try {
+    await prisma.assignment.delete({
+      where: {
+        id: parseInt(id),
+      },
+    });
+
+    // revalidatePath("/list/assignments");
+    return { success: true, error: false };
+  } catch (err) {
+    console.log(err);
+    return { success: false, error: true };
+  }
+};
+
+export const deleteAttendance = async (
+  currentState: CurrentState,
+  data: FormData
+) => {
+  const id = data.get("id") as string;
+  try {
+    await prisma.attendance.delete({
+      where: {
+        id: parseInt(id),
+      },
+    });
+
+    // revalidatePath("/list/attendance");
+    return { success: true, error: false };
+  } catch (err) {
+    console.log(err);
+    return { success: false, error: true };
+  }
+};
+
+export const updateAssignment = async (
+  currentState: CurrentState,
+  data: AssignmentSchema
+) => {
+  const { userId } = auth();
+  try {
+    await prisma.assignment.update({
+      where: {
+        id: data.id,
+      },
+      data: {
+        title: data.title,
+        description: data.description,
+        startDate: data.startDate,
+        dueDate: data.dueDate,
+        lessonId: data.lessonId ? parseInt(data.lessonId as any) : null,
+        subjectId: data.subjectId,
+        classId: data.classId,
+        teacherId: userId!,
+      },
+    });
+
+    revalidatePath("/list/assignments");
+    return { success: true, error: false };
+  } catch (err) {
+    console.log(err);
+    return { success: false, error: true };
+  }
+};
+
+export const markAllNotificationsAsRead = async (userId: string) => {
+  try {
+    await prisma.notification.updateMany({
+      where: {
+        userId,
+        read: false,
+      },
+      data: {
+        read: true,
+      },
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to mark notifications as read:", err);
+    return { success: false };
   }
 };

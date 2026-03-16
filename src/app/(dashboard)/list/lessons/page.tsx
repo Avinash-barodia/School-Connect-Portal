@@ -19,7 +19,7 @@ const LessonListPage = async ({
   searchParams: { [key: string]: string | undefined };
 }) => {
 
-const { sessionClaims } = auth();
+const { userId, sessionClaims } = auth();
 const role = (sessionClaims?.metadata as { role?: string })?.role;
 
 
@@ -99,6 +99,36 @@ const renderRow = (item: LessonList) => (
         }
       }
     }
+  }
+
+  // ROLE CONDITIONS
+
+  switch (role) {
+    case "admin":
+      break;
+    case "teacher":
+      query.teacherId = userId!;
+      break;
+    case "student":
+      query.class = {
+        students: {
+          some: {
+            id: userId!,
+          },
+        },
+      };
+      break;
+    case "parent":
+      query.class = {
+        students: {
+          some: {
+            parentId: userId!,
+          },
+        },
+      };
+      break;
+    default:
+      break;
   }
 
   const [data, count] = await prisma.$transaction([

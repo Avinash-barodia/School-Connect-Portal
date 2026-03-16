@@ -57,7 +57,7 @@ const ExamForm = ({
   const router = useRouter();
 
   useEffect(() => {
-    if (state.success) {
+    if (state?.success) {
       toast(`Exam has been ${type === "create" ? "created" : "updated"}!`);
       setOpen(false);
       router.refresh();
@@ -126,7 +126,7 @@ const ExamForm = ({
           )}
         </div>
       </div>
-      {state.error && (
+      {state?.error && (
         <span className="text-red-500">Something went wrong</span>
       )}
       <button className="bg-blue-400 text-white p-2 rounded-md">

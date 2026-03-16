@@ -7,8 +7,6 @@ const matchers = Object.keys(routeAccessMap).map((route) => ({
   allowedRoles: routeAccessMap[route],
 }));
 
-console.log(matchers);
-
 export default clerkMiddleware((auth, req) => {
   // if (isProtectedRoute(req)) auth().protect()
 
@@ -18,7 +16,7 @@ export default clerkMiddleware((auth, req) => {
 
   for (const { matcher, allowedRoles } of matchers) {
     if (matcher(req) && !allowedRoles.includes(role!)) {
-      return NextResponse.redirect(new URL(`/${role}`, req.url));
+      return NextResponse.redirect(new URL(`/${role || ""}`, req.url));
     }
   }
 });

@@ -6,6 +6,9 @@ import {
   deleteStudent,
   deleteSubject,
   deleteTeacher,
+  deleteLesson,
+  deleteAssignment,
+  deleteAttendance,
 } from "@/lib/actions";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -23,10 +26,10 @@ const deleteActionMap = {
   exam: deleteExam,
 // TODO: OTHER DELETE ACTIONS
   parent: deleteSubject,
-  lesson: deleteSubject,
-  assignment: deleteSubject,
+  lesson: deleteLesson,
+  assignment: deleteAssignment,
   result: deleteSubject,
-  attendance: deleteSubject,
+  attendance: deleteAttendance,
   event: deleteSubject,
   announcement: deleteSubject,
 };
@@ -49,6 +52,15 @@ const ClassForm = dynamic(() => import("./forms/ClassForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 const ExamForm = dynamic(() => import("./forms/ExamForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const AssignmentForm = dynamic(() => import("./forms/AssignmentForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const AttendanceForm = dynamic(() => import("./forms/AttendanceForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+const LessonForm = dynamic(() => import("./forms/LessonForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 // TODO: OTHER FORMS
@@ -109,6 +121,22 @@ const forms: {
       relatedData={relatedData}
     />
   ),
+  assignment: (setOpen, type, data, relatedData) => (
+    <AssignmentForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
+  attendance: (setOpen, type, data, relatedData) => (
+    <AttendanceForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
   // TODO OTHER LIST ITEMS
   // parent: (setOpen, type, data, relatedData) => (
   //   <ParentForm
@@ -119,6 +147,14 @@ const forms: {
   //   />
   //),
 
+  lesson: (setOpen, type, data, relatedData) => (
+    <LessonForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
   event: (setOpen, type, data, relatedData) => (
     <EventForm
       type={type}

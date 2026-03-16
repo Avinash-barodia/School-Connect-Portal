@@ -50,6 +50,7 @@ model Teacher {
   subjects  Subject[]
   lessons   Lesson[]
   classes   Class[]
+  assignments Assignment[]
   birthday  DateTime
 }
 
@@ -86,6 +87,7 @@ model Class {
   grade         Grade          @relation(fields: [gradeId], references: [id])
   events        Event[]
   announcements Announcement[]
+  assignments   Assignment[]
 }
 
 model Subject {
@@ -93,6 +95,7 @@ model Subject {
   name     String    @unique
   teachers Teacher[]
   lessons  Lesson[]
+  assignments Assignment[]
 }
 
 model Lesson {
@@ -125,13 +128,23 @@ model Exam {
 }
 
 model Assignment {
-  id        Int      @id @default(autoincrement())
-  title     String
-  startDate DateTime
-  dueDate   DateTime
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  startDate   DateTime
+  dueDate     DateTime
 
-  lessonId Int
-  lesson   Lesson   @relation(fields: [lessonId], references: [id])
+  lessonId Int?
+  lesson   Lesson?  @relation(fields: [lessonId], references: [id])
+  
+  subjectId Int?
+  subject   Subject? @relation(fields: [subjectId], references: [id])
+  classId   Int?
+  class     Class?   @relation(fields: [classId], references: [id])
+  
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
+
   results  Result[]
 }
 
@@ -190,4 +203,13 @@ enum Day {
   WEDNESDAY
   THURSDAY
   FRIDAY
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  userId    String   // Clerk User ID
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
