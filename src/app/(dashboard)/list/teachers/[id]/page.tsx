@@ -4,7 +4,7 @@ import BigCalendar from "@/components/BigCalender";
 import FormContainer from "@/components/FormContainer";
 import Performance from "@/components/Performance";
 import prisma from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { canAccessTeacherRecord, getAuthSession } from "@/lib/auth";
 import { Teacher } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,8 +15,11 @@ const SingleTeacherPage = async ({
 }: {
   params: { id: string };
 }) => {
-  const { sessionClaims } = auth();
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
+  const session = getAuthSession();
+  if (!session || !canAccessTeacherRecord(session)) {
+    return notFound();
+  }
+  const role = session.role;
 
   const teacher:
     | (Teacher & {

@@ -100,9 +100,12 @@ const AssignmentForm = ({
           />
         )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Subject</label>
+          <label htmlFor="assignment-subject" className="text-xs text-gray-500">Subject</label>
           <select
+            id="assignment-subject"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.subjectId ? "true" : "false"}
+            aria-describedby={errors.subjectId?.message ? "assignment-subject-error" : undefined}
             {...register("subjectId")}
             defaultValue={data?.subjectId}
           >
@@ -114,15 +117,18 @@ const AssignmentForm = ({
             ))}
           </select>
           {errors.subjectId?.message && (
-            <p className="text-xs text-red-400">
+            <p id="assignment-subject-error" role="alert" className="text-xs text-red-400">
               {errors.subjectId.message.toString()}
             </p>
           )}
         </div>
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Class</label>
+          <label htmlFor="assignment-class" className="text-xs text-gray-500">Class</label>
           <select
+            id="assignment-class"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.classId ? "true" : "false"}
+            aria-describedby={errors.classId?.message ? "assignment-class-error" : undefined}
             {...register("classId")}
             defaultValue={data?.classId}
           >
@@ -134,21 +140,24 @@ const AssignmentForm = ({
             ))}
           </select>
           {errors.classId?.message && (
-            <p className="text-xs text-red-400">
+            <p id="assignment-class-error" role="alert" className="text-xs text-red-400">
               {errors.classId.message.toString()}
             </p>
           )}
         </div>
         
         <div className="flex flex-col gap-2 w-full">
-          <label className="text-xs text-gray-500">Instructions / Description</label>
+          <label htmlFor="assignment-description" className="text-xs text-gray-500">Instructions / Description</label>
           <textarea
+            id="assignment-description"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full min-h-[100px]"
+            aria-invalid={errors.description ? "true" : "false"}
+            aria-describedby={errors.description?.message ? "assignment-description-error" : undefined}
             {...register("description")}
             defaultValue={data?.description}
           />
           {errors.description?.message && (
-            <p className="text-xs text-red-400">
+            <p id="assignment-description-error" role="alert" className="text-xs text-red-400">
               {errors.description.message.toString()}
             </p>
           )}

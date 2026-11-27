@@ -6,7 +6,8 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Class, Exam, Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
-import { auth } from "@clerk/nextjs/server";
+import { notFound } from "next/navigation";
+import { buildExamWhere, getAuthSession } from "@/lib/auth";
 
 type ExamList = Exam & {
   lesson: {
@@ -22,9 +23,11 @@ const ExamListPage = async ({
   searchParams: { [key: string]: string | undefined };
 }) => {
 
-const { userId, sessionClaims } = auth();
-const role = (sessionClaims?.metadata as { role?: string })?.role;
-const currentUserId = userId;
+const session = getAuthSession();
+if (!session) {
+  return notFound();
+}
+const role = session.role;
 
 
 const columns = [
@@ -113,40 +116,11 @@ const renderRow = (item: ExamList) => (
     }
   }
 
-  // ROLE CONDITIONS
-
-  switch (role) {
-    case "admin":
-      break;
-    case "teacher":
-      query.lesson.teacherId = currentUserId!;
-      break;
-    case "student":
-      query.lesson.class = {
-        students: {
-          some: {
-            id: currentUserId!,
-          },
-        },
-      };
-      break;
-    case "parent":
-      query.lesson.class = {
-        students: {
-          some: {
-            parentId: currentUserId!,
-          },
-        },
-      };
-      break;
-
-    default:
-      break;
-  }
+  const scopedQuery = buildExamWhere(session, query);
 
   const [data, count] = await prisma.$transaction([
     prisma.exam.findMany({
-      where: query,
+      where: scopedQuery,
       include: {
         lesson: {
           select: {
@@ -159,7 +133,7 @@ const renderRow = (item: ExamList) => (
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
-    prisma.exam.count({ where: query }),
+    prisma.exam.count({ where: scopedQuery }),
   ]);
 
   return (
@@ -170,11 +144,9 @@ const renderRow = (item: ExamList) => (
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/filter.png" alt="" width={14} height={14} />
+            <button type="button" aria-label="Filter" className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow"><Image src="/filter.png" alt="" width={14} height={14} />
             </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/sort.png" alt="" width={14} height={14} />
+            <button type="button" aria-label="Sort" className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow"><Image src="/sort.png" alt="" width={14} height={14} />
             </button>
             {(role === "admin" || role === "teacher") && (
               <FormContainer table="exam" type="create" />

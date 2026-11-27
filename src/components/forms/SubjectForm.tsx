@@ -81,10 +81,13 @@ const SubjectForm = ({
           />
         )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Teachers</label>
+          <label htmlFor="subject-teachers" className="text-xs text-gray-500">Teachers</label>
           <select
+            id="subject-teachers"
             multiple
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.teachers ? "true" : "false"}
+            aria-describedby={errors.teachers?.message ? "subject-teachers-error" : undefined}
             {...register("teachers")}
             defaultValue={data?.teachers}
           >
@@ -97,7 +100,7 @@ const SubjectForm = ({
             )}
           </select>
           {errors.teachers?.message && (
-            <p className="text-xs text-red-400">
+            <p id="subject-teachers-error" role="alert" className="text-xs text-red-400">
               {errors.teachers.message.toString()}
             </p>
           )}

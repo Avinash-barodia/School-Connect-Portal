@@ -185,9 +185,12 @@ const StudentForm = ({
           />
         )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Sex</label>
+          <label htmlFor="student-sex" className="text-xs text-gray-500">Sex</label>
           <select
+            id="student-sex"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.sex ? "true" : "false"}
+            aria-describedby={errors.sex?.message ? "student-sex-error" : undefined}
             {...register("sex")}
             defaultValue={data?.sex}
           >
@@ -195,15 +198,18 @@ const StudentForm = ({
             <option value="FEMALE">Female</option>
           </select>
           {errors.sex?.message && (
-            <p className="text-xs text-red-400">
+            <p id="student-sex-error" role="alert" className="text-xs text-red-400">
               {errors.sex.message.toString()}
             </p>
           )}
         </div>
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Grade</label>
+          <label htmlFor="student-grade" className="text-xs text-gray-500">Grade</label>
           <select
+            id="student-grade"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.gradeId ? "true" : "false"}
+            aria-describedby={errors.gradeId?.message ? "student-grade-error" : undefined}
             {...register("gradeId")}
             defaultValue={data?.gradeId}
           >
@@ -214,15 +220,18 @@ const StudentForm = ({
             ))}
           </select>
           {errors.gradeId?.message && (
-            <p className="text-xs text-red-400">
+            <p id="student-grade-error" role="alert" className="text-xs text-red-400">
               {errors.gradeId.message.toString()}
             </p>
           )}
         </div>
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Class</label>
+          <label htmlFor="student-class" className="text-xs text-gray-500">Class</label>
           <select
+            id="student-class"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.classId ? "true" : "false"}
+            aria-describedby={errors.classId?.message ? "student-class-error" : undefined}
             {...register("classId")}
             defaultValue={data?.classId}
           >
@@ -242,7 +251,7 @@ const StudentForm = ({
             )}
           </select>
           {errors.classId?.message && (
-            <p className="text-xs text-red-400">
+            <p id="student-class-error" role="alert" className="text-xs text-red-400">
               {errors.classId.message.toString()}
             </p>
           )}

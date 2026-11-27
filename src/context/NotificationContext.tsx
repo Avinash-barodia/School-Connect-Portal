@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { getSocket } from "@/lib/socket-client";
+import { getAuthenticatedSocket } from "@/lib/socket-client";
 
 interface NotificationContextType {
   count: number;
@@ -17,24 +17,32 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   const { user } = useUser();
 
   useEffect(() => {
+    let active = true;
+    let attachedSocket: Awaited<ReturnType<typeof getAuthenticatedSocket>> = null;
+    const handleNotification = () => {
+      setCount((prev) => prev + 1);
+    };
+
     if (user) {
-      // Fetch initial count from server action (to be implemented)
-      fetchUnreadCount(user.id);
+      fetchUnreadCount();
 
-      const socket = getSocket(user.id);
-      socket.on("notification", () => {
-        setCount((prev) => prev + 1);
+      getAuthenticatedSocket().then((socket) => {
+        if (!active || !socket) return;
+        attachedSocket = socket;
+        socket.on("notification", handleNotification);
       });
-
-      return () => {
-        socket.off("notification");
-      };
     }
+
+    return () => {
+      active = false;
+      attachedSocket?.off("notification", handleNotification);
+    };
   }, [user]);
 
-  const fetchUnreadCount = async (userId: string) => {
+  const fetchUnreadCount = async () => {
     try {
-      const response = await fetch(`/api/notifications/unread-count?userId=${userId}`);
+      const response = await fetch("/api/notifications/unread-count");
+      if (!response.ok) return;
       const data = await response.json();
       setCount(data.count || 0);
     } catch (err) {

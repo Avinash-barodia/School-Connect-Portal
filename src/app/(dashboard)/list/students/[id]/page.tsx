@@ -4,7 +4,7 @@ import FormContainer from "@/components/FormContainer";
 import Performance from "@/components/Performance";
 import StudentAttendanceCard from "@/components/StudentAttendanceCard";
 import prisma from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { canAccessStudentRecord, getAuthSession } from "@/lib/auth";
 import { Class, Student } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,8 +16,11 @@ const SingleStudentPage = async ({
 }: {
   params: { id: string };
 }) => {
-  const { sessionClaims } = auth();
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
+  const session = getAuthSession();
+  if (!session || !(await canAccessStudentRecord(prisma, session, id))) {
+    return notFound();
+  }
+  const role = session.role;
 
   const student:
     | (Student & {

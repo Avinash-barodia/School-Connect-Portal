@@ -92,9 +92,12 @@ const LessonForm = ({
           type="datetime-local"
         />
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Subject</label>
+          <label htmlFor="lesson-subject" className="text-xs text-gray-500">Subject</label>
           <select
+            id="lesson-subject"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.subjectId ? "true" : "false"}
+            aria-describedby={errors.subjectId?.message ? "lesson-subject-error" : undefined}
             {...register("subjectId")}
             defaultValue={data?.subjectId}
           >
@@ -106,9 +109,12 @@ const LessonForm = ({
           </select>
         </div>
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Class</label>
+          <label htmlFor="lesson-class" className="text-xs text-gray-500">Class</label>
           <select
+            id="lesson-class"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.classId ? "true" : "false"}
+            aria-describedby={errors.classId?.message ? "lesson-class-error" : undefined}
             {...register("classId")}
             defaultValue={data?.classId}
           >
@@ -120,9 +126,12 @@ const LessonForm = ({
           </select>
         </div>
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Teacher</label>
+          <label htmlFor="lesson-teacher" className="text-xs text-gray-500">Teacher</label>
           <select
+            id="lesson-teacher"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.teacherId ? "true" : "false"}
+            aria-describedby={errors.teacherId?.message ? "lesson-teacher-error" : undefined}
             {...register("teacherId")}
             defaultValue={data?.teacherId}
           >

@@ -75,9 +75,12 @@ const AttendanceForm = ({
         />
         
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Student</label>
+          <label htmlFor="attendance-student" className="text-xs text-gray-500">Student</label>
           <select
+            id="attendance-student"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.studentId ? "true" : "false"}
+            aria-describedby={errors.studentId?.message ? "attendance-student-error" : undefined}
             {...register("studentId")}
             defaultValue={data?.studentId}
           >
@@ -88,16 +91,19 @@ const AttendanceForm = ({
             ))}
           </select>
           {errors.studentId?.message && (
-            <p className="text-xs text-red-400">
+            <p id="attendance-student-error" role="alert" className="text-xs text-red-400">
               {errors.studentId.message.toString()}
             </p>
           )}
         </div>
 
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Lesson</label>
+          <label htmlFor="attendance-lesson" className="text-xs text-gray-500">Lesson</label>
           <select
+            id="attendance-lesson"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.lessonId ? "true" : "false"}
+            aria-describedby={errors.lessonId?.message ? "attendance-lesson-error" : undefined}
             {...register("lessonId")}
             defaultValue={data?.lessonId}
           >
@@ -108,7 +114,7 @@ const AttendanceForm = ({
             ))}
           </select>
           {errors.lessonId?.message && (
-            <p className="text-xs text-red-400">
+            <p id="attendance-lesson-error" role="alert" className="text-xs text-red-400">
               {errors.lessonId.message.toString()}
             </p>
           )}

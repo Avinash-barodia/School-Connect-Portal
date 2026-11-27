@@ -1,6 +1,12 @@
 import prisma from "@/lib/prisma";
+import { buildClassScopedWhere, getAuthSession } from "@/lib/auth";
 
 const EventList = async ({ dateParam }: { dateParam: string | undefined }) => {
+  const session = getAuthSession();
+  if (!session) {
+    return null;
+  }
+
   const date = dateParam ? new Date(dateParam) : new Date();
 
   const data = await prisma.event.findMany({
@@ -9,6 +15,7 @@ const EventList = async ({ dateParam }: { dateParam: string | undefined }) => {
         gte: new Date(date.setHours(0, 0, 0, 0)),
         lte: new Date(date.setHours(23, 59, 59, 999)),
       },
+      ...buildClassScopedWhere(session),
     },
   });
 

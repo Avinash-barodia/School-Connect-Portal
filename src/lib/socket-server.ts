@@ -1,5 +1,16 @@
 import { Server } from "socket.io";
 import http from "http";
+import crypto from "crypto";
+import { getSocketAuthSecret, verifySocketToken } from "./socket-auth";
+
+function isAuthorizedInternalRequest(req: http.IncomingMessage, secret: string): boolean {
+  const provided = req.headers["x-socket-secret"];
+  if (typeof provided !== "string" || !provided) return false;
+
+  const a = Buffer.from(provided);
+  const b = Buffer.from(secret);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
 
 const httpServer = http.createServer((req, res) => {
   if (req.url === "/health") {
@@ -8,21 +19,35 @@ const httpServer = http.createServer((req, res) => {
     return;
   }
   if (req.method === "POST" && req.url === "/notify") {
+    let secret: string;
+    try {
+      secret = getSocketAuthSecret();
+    } catch {
+      res.writeHead(500);
+      res.end();
+      return;
+    }
+
+    if (!isAuthorizedInternalRequest(req, secret)) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Unauthorized" }));
+      return;
+    }
+
     let body = "";
-    req.on("data", chunk => body += chunk);
+    req.on("data", (chunk) => (body += chunk));
     req.on("end", () => {
       try {
         const { userId, title, message } = JSON.parse(body);
-        const socketId = userSockets.get(userId);
-        if (socketId) {
-          io.to(socketId).emit("notification", { title, message });
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true }));
-        } else {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: false, error: "User not connected" }));
+        if (typeof userId !== "string" || !userId) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, error: "Invalid userId" }));
+          return;
         }
-      } catch (e) {
+        io.to(`user:${userId}`).emit("notification", { title, message });
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true }));
+      } catch {
         res.writeHead(400);
         res.end();
       }
@@ -32,6 +57,7 @@ const httpServer = http.createServer((req, res) => {
     res.end();
   }
 });
+
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
@@ -39,36 +65,41 @@ const io = new Server(httpServer, {
   },
 });
 
-const userSockets = new Map<string, string>();
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+    if (typeof token !== "string" || !token) {
+      return next(new Error("Unauthorized: missing token"));
+    }
+    const payload = verifySocketToken(token, getSocketAuthSecret());
+    if (!payload) {
+      return next(new Error("Unauthorized: invalid token"));
+    }
+    socket.data.userId = payload.userId;
+    socket.data.role = payload.role;
+    return next();
+  } catch {
+    return next(new Error("Unauthorized"));
+  }
+});
 
 io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
+  const userId = socket.data.userId as string;
+  socket.join(`user:${userId}`);
+  console.log(`Authenticated user ${userId} connected (${socket.id})`);
 
-  socket.on("register", (userId: string) => {
-    userSockets.set(userId, socket.id);
-    console.log(`User ${userId} registered with socket ${socket.id}`);
+  // Reject any attempt to subscribe to another user's room
+  socket.on("register", (requestedUserId: unknown, ack?: (res: { ok: boolean; error?: string }) => void) => {
+    if (requestedUserId !== userId) {
+      ack?.({ ok: false, error: "Forbidden: cannot subscribe as another user" });
+      return;
+    }
+    socket.join(`user:${userId}`);
+    ack?.({ ok: true });
   });
 
   socket.on("disconnect", () => {
-    for (const [userId, socketId] of userSockets.entries()) {
-      if (socketId === socket.id) {
-        userSockets.delete(userId);
-        console.log(`User ${userId} disconnected`);
-        break;
-      }
-    }
-  });
-
-  // Internal event for backend to trigger notifications
-  socket.on("sendNotification", ({ userId, title, message }: { userId: string, title: string, message: string }) => {
-    console.log(`Received sendNotification for user ${userId}: ${title}`);
-    const socketId = userSockets.get(userId);
-    if (socketId) {
-      console.log(`Forwarding notification to socket ${socketId}`);
-      io.to(socketId).emit("notification", { title, message });
-    } else {
-      console.log(`User ${userId} not found in userSockets map. Current users: ${Array.from(userSockets.keys()).join(", ")}`);
-    }
+    console.log(`User ${userId} disconnected (${socket.id})`);
   });
 });
 

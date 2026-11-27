@@ -6,7 +6,8 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Announcement, Class, Prisma } from "@prisma/client";
 import Image from "next/image";
-import { auth } from "@clerk/nextjs/server";
+import { notFound } from "next/navigation";
+import { buildClassScopedWhere, getAuthSession } from "@/lib/auth";
 
 
 type AnnouncementList = Announcement & { class: Class };
@@ -15,10 +16,11 @@ const AnnouncementListPage = async ({
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
-  
-  const { userId, sessionClaims } = auth();
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
-  const currentUserId = userId;
+  const session = getAuthSession();
+  if (!session) {
+    return notFound();
+  }
+  const role = session.role;
   
   const columns = [
     {
@@ -88,31 +90,21 @@ const AnnouncementListPage = async ({
     }
   }
 
-  // ROLE CONDITIONS
-
-  const roleConditions = {
-    teacher: { lessons: { some: { teacherId: currentUserId! } } },
-    student: { students: { some: { id: currentUserId! } } },
-    parent: { students: { some: { parentId: currentUserId! } } },
+  const scopedQuery: Prisma.AnnouncementWhereInput = {
+    ...query,
+    ...buildClassScopedWhere(session),
   };
-
-  query.OR = [
-    { classId: null },
-    {
-      class: roleConditions[role as keyof typeof roleConditions] || {},
-    },
-  ];
 
   const [data, count] = await prisma.$transaction([
     prisma.announcement.findMany({
-      where: query,
+      where: scopedQuery,
       include: {
         class: true,
       },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),
     }),
-    prisma.announcement.count({ where: query }),
+    prisma.announcement.count({ where: scopedQuery }),
   ]);
 
   return (
@@ -125,11 +117,9 @@ const AnnouncementListPage = async ({
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/filter.png" alt="" width={14} height={14} />
+            <button type="button" aria-label="Filter" className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow"><Image src="/filter.png" alt="" width={14} height={14} />
             </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/sort.png" alt="" width={14} height={14} />
+            <button type="button" aria-label="Sort" className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow"><Image src="/sort.png" alt="" width={14} height={14} />
             </button>
             {role === "admin" && (
               <FormContainer table="announcement" type="create" />

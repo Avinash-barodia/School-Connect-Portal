@@ -119,11 +119,14 @@ const EventForm = ({
           />
         )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Class</label>
+          <label htmlFor="event-class" className="text-xs text-gray-500">Class</label>
           <select
+            id="event-class"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.classId ? "true" : "false"}
+            aria-describedby={errors.classId?.message ? "event-class-error" : undefined}
             {...register("classId")}
-            defaultValue={data?.teachers}
+            defaultValue={data?.classId}
           >
             {classes?.map((clas : { id: number; name: string }) => (
               <option value={clas.id} key={clas.id}>
@@ -133,7 +136,7 @@ const EventForm = ({
           </select>
 
           {errors.classId?.message && (
-            <p className="text-xs text-red-400">
+            <p id="event-class-error" role="alert" className="text-xs text-red-400">
               {errors.classId.message.toString()}
             </p>
           )}

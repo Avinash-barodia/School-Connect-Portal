@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { routeAccessMap } from "./lib/settings";
+import { isValidRole } from "./lib/auth";
 import { NextResponse } from "next/server";
 
 const matchers = Object.keys(routeAccessMap).map((route) => ({
@@ -7,16 +8,27 @@ const matchers = Object.keys(routeAccessMap).map((route) => ({
   allowedRoles: routeAccessMap[route],
 }));
 
+const isApiRoute = createRouteMatcher(["/api(.*)"]);
+
 export default clerkMiddleware((auth, req) => {
-  // if (isProtectedRoute(req)) auth().protect()
+  const { userId, sessionClaims } = auth();
+  const role = (sessionClaims?.metadata as { role?: unknown } | undefined)?.role;
 
-  const { sessionClaims } =   auth();
-
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
+  if (isApiRoute(req)) {
+    if (!userId || !isValidRole(role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
 
   for (const { matcher, allowedRoles } of matchers) {
-    if (matcher(req) && !allowedRoles.includes(role!)) {
-      return NextResponse.redirect(new URL(`/${role || ""}`, req.url));
+    if (matcher(req)) {
+      if (!userId || !isValidRole(role)) {
+        return NextResponse.redirect(new URL("/", req.url));
+      }
+      if (!allowedRoles.includes(role)) {
+        return NextResponse.redirect(new URL(`/${role}`, req.url));
+      }
     }
   }
 });

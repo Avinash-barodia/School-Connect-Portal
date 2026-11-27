@@ -98,18 +98,20 @@ const ClassForm = ({
           />
         )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Supervisor</label>
+          <label htmlFor="class-supervisor" className="text-xs text-gray-500">Supervisor</label>
           <select
+            id="class-supervisor"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.supervisorId ? "true" : "false"}
+            aria-describedby={errors.supervisorId?.message ? "class-supervisor-error" : undefined}
             {...register("supervisorId")}
-            defaultValue={data?.teachers}
+            defaultValue={data?.supervisorId}
           >
             {teachers.map(
               (teacher: { id: string; name: string; surname: string }) => (
                 <option
                   value={teacher.id}
                   key={teacher.id}
-                  selected={data && teacher.id === data.supervisorId}
                 >
                   {teacher.name + " " + teacher.surname}
                 </option>
@@ -117,15 +119,18 @@ const ClassForm = ({
             )}
           </select>
           {errors.supervisorId?.message && (
-            <p className="text-xs text-red-400">
+            <p id="class-supervisor-error" role="alert" className="text-xs text-red-400">
               {errors.supervisorId.message.toString()}
             </p>
           )}
         </div>
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Grade</label>
+          <label htmlFor="class-grade" className="text-xs text-gray-500">Grade</label>
           <select
+            id="class-grade"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.gradeId ? "true" : "false"}
+            aria-describedby={errors.gradeId?.message ? "class-grade-error" : undefined}
             {...register("gradeId")}
             defaultValue={data?.gradeId}
           >
@@ -133,14 +138,13 @@ const ClassForm = ({
               <option
                 value={grade.id}
                 key={grade.id}
-                selected={data && grade.id === data.gradeId}
               >
                 {grade.level}
               </option>
             ))}
           </select>
           {errors.gradeId?.message && (
-            <p className="text-xs text-red-400">
+            <p id="class-grade-error" role="alert" className="text-xs text-red-400">
               {errors.gradeId.message.toString()}
             </p>
           )}

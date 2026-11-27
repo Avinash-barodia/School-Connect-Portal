@@ -148,9 +148,12 @@ const TeacherForm = ({
           />
         )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Sex</label>
+          <label htmlFor="teacher-sex" className="text-xs text-gray-500">Sex</label>
           <select
+            id="teacher-sex"
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.sex ? "true" : "false"}
+            aria-describedby={errors.sex?.message ? "teacher-sex-error" : undefined}
             {...register("sex")}
             defaultValue={data?.sex}
           >
@@ -158,16 +161,19 @@ const TeacherForm = ({
             <option value="FEMALE">Female</option>
           </select>
           {errors.sex?.message && (
-            <p className="text-xs text-red-400">
+            <p id="teacher-sex-error" role="alert" className="text-xs text-red-400">
               {errors.sex.message.toString()}
             </p>
           )}
         </div>
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Subjects</label>
+          <label htmlFor="teacher-subjects" className="text-xs text-gray-500">Subjects</label>
           <select
+            id="teacher-subjects"
             multiple
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            aria-invalid={errors.subjects ? "true" : "false"}
+            aria-describedby={errors.subjects?.message ? "teacher-subjects-error" : undefined}
             {...register("subjects")}
             defaultValue={data?.subjects}
           >
@@ -178,7 +184,7 @@ const TeacherForm = ({
             ))}
           </select>
           {errors.subjects?.message && (
-            <p className="text-xs text-red-400">
+            <p id="teacher-subjects-error" role="alert" className="text-xs text-red-400">
               {errors.subjects.message.toString()}
             </p>
           )}
